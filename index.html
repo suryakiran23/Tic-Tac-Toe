@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #80b2df;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+        .container {
+            text-align: center;
+        }
+        .mode-selection, .player-selection, .play-board, .result-box {
+            display: none;
+        }
+        .show {
+            display: block;
+        }
+        .play-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            margin-top: 20px;
+        }
+        .box {
+            width: 100px;
+            height: 100px;
+            background-color: #ece2e2;
+            border: 2px solid #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            cursor: pointer;
+        }
+        .result-box {
+            margin-top: 20px;
+        }
+        .winning {
+            background-color: #00FF00;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #080211;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #05010e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="mode-selection show">
+            <h1>Choose Game Mode</h1>
+            <button id="vsComputer">Play with Computer</button>
+            <button id="vsFriend">Play with Friend</button>
+        </div>
+        <div class="player-selection">
+            <h1>Select your Mark</h1>
+            <button id="x">X</button>
+            <button id="o">O</button>
+        </div>
+        <div class="play-board">
+            <div class="box" data-index="1"></div>
+            <div class="box" data-index="2"></div>
+            <div class="box" data-index="3"></div>
+            <div class="box" data-index="4"></div>
+            <div class="box" data-index="5"></div>
+            <div class="box" data-index="6"></div>
+            <div class="box" data-index="7"></div>
+            <div class="box" data-index="8"></div>
+            <div class="box" data-index="9"></div>
+        </div>
+        <div class="result-box">
+            <h2 class="won-text"></h2>
+            <button class="replay-btn">Replay</button>
+        </div>
+    </div>
+
+    <script>
+        const modeSelection = document.querySelector(".mode-selection");
+        const playerSelection = document.querySelector(".player-selection");
+        const playBoard = document.querySelector(".play-board");
+        const resultBox = document.querySelector(".result-box");
+        const wonText = document.querySelector(".won-text");
+        const replayBtn = document.querySelector(".replay-btn");
+        const boxes = document.querySelectorAll(".box");
+
+        let playerSign = "X";
+        let opponentSign = "O";
+        let currentPlayer = "X";
+        let runBot = true;
+        let gameMode = "computer";
+
+        document.getElementById("vsComputer").onclick = () => {
+            gameMode = "computer";
+            playerSelection.classList.add("show");
+            modeSelection.classList.remove("show");
+        };
+
+        document.getElementById("vsFriend").onclick = () => {
+            gameMode = "friend";
+            playBoard.classList.add("show");
+            modeSelection.classList.remove("show");
+        };
+
+        document.getElementById("x").onclick = () => {
+            playerSign = "X";
+            opponentSign = "O";
+            currentPlayer = "X";
+            playBoard.classList.add("show");
+            playerSelection.classList.remove("show");
+        };
+
+        document.getElementById("o").onclick = () => {
+            playerSign = "O";
+            opponentSign = "X";
+            currentPlayer = "X";
+            playBoard.classList.add("show");
+            playerSelection.classList.remove("show");
+        };
+
+        boxes.forEach(box => {
+            box.addEventListener("click", () => {
+                if (box.innerHTML === "" && runBot) {
+                    box.innerHTML = currentPlayer;
+                    box.setAttribute("id", currentPlayer);
+                    if (checkWinner()) {
+                        endGame(currentPlayer);
+                    } else if (isBoardFull()) {
+                        endGame("draw");
+                    } else {
+                        switchPlayer();
+                    }
+                }
+            });
+        });
+
+        replayBtn.onclick = () => {
+            window.location.reload();
+        };
+
+        function switchPlayer() {
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+            if (gameMode === "computer" && currentPlayer === opponentSign) {
+                playBoard.style.pointerEvents = "none";
+                setTimeout(() => {
+                    botMove();
+                    playBoard.style.pointerEvents = "auto";
+                }, 700);
+            }
+        }
+
+        function botMove() {
+            let emptyBoxes = [];
+            boxes.forEach(box => {
+                if (box.innerHTML === "") {
+                    emptyBoxes.push(box);
+                }
+            });
+            let randomBox = emptyBoxes[Math.floor(Math.random() * emptyBoxes.length)];
+            randomBox.innerHTML = opponentSign;
+            randomBox.setAttribute("id", opponentSign);
+            if (checkWinner()) {
+                endGame(opponentSign);
+            } else if (isBoardFull()) {
+                endGame("draw");
+            } else {
+                switchPlayer();
+            }
+        }
+
+        function checkWinner() {
+            const winningCombinations = [
+                [1, 2, 3],
+                [4, 5, 6],
+                [7, 8, 9],
+                [1, 4, 7],
+                [2, 5, 8],
+                [3, 6, 9],
+                [1, 5, 9],
+                [3, 5, 7]
+            ];
+
+            return winningCombinations.some(combination => {
+                if (getIdVal(combination[0]) === currentPlayer &&
+                    getIdVal(combination[1]) === currentPlayer &&
+                    getIdVal(combination[2]) === currentPlayer) {
+                    setWinningStyle(combination);
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        function getIdVal(index) {
+            return document.querySelector(`.box[data-index="${index}"]`).id;
+        }
+
+        function setWinningStyle(combination) {
+            combination.forEach(index => {
+                document.querySelector(`.box[data-index="${index}"]`).classList.add("winning");
+            });
+        }
+
+        function isBoardFull() {
+            return [...boxes].every(box => box.innerHTML !== "");
+        }
+
+        function endGame(result) {
+            runBot = false;
+            disableBoxes();
+            setTimeout(() => {
+                resultBox.classList.add("show");
+                playBoard.classList.remove("show");
+            }, 700);
+
+            if (result === "draw") {
+                wonText.innerHTML = "Match has been drawn!";
+            } else {
+                wonText.innerHTML = `Player ${result} won the game!`;
+            }
+        }
+
+        function disableBoxes() {
+            boxes.forEach(box => {
+                box.style.pointerEvents = "none";
+            });
+        }
+    </script>
+</body>
+</html>
